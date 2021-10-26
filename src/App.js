@@ -1,54 +1,79 @@
 import { useState } from 'react';
 import './App.css';
 import Button from './button';
+import Container from './container';
+import Text from './text';
 
 function App() {
+  const btns = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '='];
   const [count, setCount] = useState(0);
-  const [things, setThings] = useState(['', '', '']);
-  const [btns, setBtns] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, '+', '-', '=']);
+  const [things, setThings] = useState(['']);
   const [text, setText] = useState('');
+  const [wasEnd, setWasEnd] = useState(0);
 
   function action(sign){
-    if((sign == '+' || sign == '-') && count == 0 && things[0] != ''){ 
-      var thing = things[1]+sign;
-      setThings([things[0], thing, things[2]]);
-      setText(things[0]+thing+things[2]);
-      setCount(1); 
-    }else if(sign == '=' && count == 1 && things[2] != ''){
-      if(things[1] == '+'){
-        setText(parseInt(things[0])+parseInt(things[2]));
-        setThings(['', '', '']);
-        setCount(0); 
+    var isEnd = 0;
+    var localThings = things;
+
+    if(parseInt(sign).toString() != 'NaN'){
+      if(!wasEnd){
+        localThings[count] += sign;
+      }else{
+        localThings = [sign];
       }
-      if(things[1] == '-'){
-        setText(parseInt(things[0])-parseInt(things[2]));
-        setThings(['', '', '']);
-        setCount(0); 
-      }
-    }else if(parseInt(sign) >= 1 && parseInt(sign) <= 9){
-      switch(count){
-        case 0:
-          var thing = things[0]+sign;
-          setThings([thing, things[1], things[2]]);
-          setText(thing+things[1]+things[2]);
+    }
+    else if(!(things[count] == '+' || things[count] == '-')){
+      switch(sign){
+        case '+':
+        case '-':
+          localThings.push(sign);
+          setCount(count+1);
           break;
-        case 1:
-          var thing = things[2]+sign;
-          setThings([things[0], things[1], thing]);
-          setText(things[0]+things[1]+thing);
-          break;
+        case '=':
+        case 'Enter':
+          var result = 0;
+          localThings.filter(e => e != '').forEach((e) => result += parseInt(e));
+          localText = result ? result.toString() : '';
+          localThings = [localText];
+          setCount(0);
+          isEnd = 1;
+          setWasEnd(1);
       }
+    }
+    if(!isEnd){
+      var localText = '';
+      localThings.forEach(e => localText += e);
+      setWasEnd(0);
+    }
+    setText(localText);
+    setThings(localThings);
+  }
+
+  function handleChange(e){
+    var value = e.target.value;
+    if(value.length < text.length){
+      var localThings = things;
+      if(localThings[localThings.length-1] == '+' || localThings[localThings.length-1] == '-'){
+        localThings.pop();
+        setCount(count-1);
+      }else{
+        var lastThing = localThings[localThings.length-1];
+        lastThing = lastThing.slice(0, lastThing.length-1);
+        localThings[localThings.length-1] = lastThing;
+      }
+      setThings(localThings);
+      var localText = '';
+      localThings.forEach(e => localText += e);
+      setText(localText);
     }
   }
 
   return (
     <>
-      <div className="d-flex m-3 p-4 border border-dark rounded" style={{width:150+54*btns.length}}>
-        <div className="align-self-center border border-dark rounded d-flex justify-content-end" 
-          style={{width:100, paddingRight:5, height:30}}>{text}</div>
+      <Container btns={btns}>
+        <Text text={text} onKeyPress={e => action(e.key)} onChange={handleChange} />
         {btns.map(e => <Button clicked={() => action(e)} sign={e} key={e} />)}
-      </div>
-
+      </Container>
     </>
   );
 }
